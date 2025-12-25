@@ -1,144 +1,128 @@
-import Header from "@/components/Header";
+// D:\Blogs\simple-blog\app\blog\[slug]\page.tsx
+import type { Metadata } from "next";
 import Link from "next/link";
-import { getAllPosts, getPostBySlug } from "@/lib/posts";
+import { notFound } from "next/navigation";
 
-type Props = { params: { slug: string } };
+import { getAllSlugs, getPostBySlug, type PostTag } from "@/lib/posts";
+import { formatDateVi } from "@/lib/utils/date";
 
-// ✅ Optional: build static pages for all posts (good for SEO)
-export function generateStaticParams() {
-  return getAllPosts().map((p) => ({ slug: p.slug }));
+import BlogContent from "@/components/blog/BlogContent";
+import Pill from "@/components/ui/Pill";
+
+type Props = { params: { slug?: string } };
+
+function toneForTag(tag: PostTag): "blue" | "orange" | "red" {
+  if (tag === "SCAM") return "red";
+  if (tag === "CASE STUDY") return "orange";
+  return "blue";
+}
+
+export async function generateStaticParams() {
+  return getAllSlugs().map((slug) => ({ slug }));
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const slug = params?.slug?.trim();
+  if (!slug) return { title: "Bài viết" };
+
+  const post = await getPostBySlug(slug);
+  if (!post) return { title: "Không tìm thấy bài viết" };
+
+  const title = post.title || "Bài viết";
+  const description = post.excerpt ?? "Bài viết thực chiến MMO – an toàn – bền vững.";
+
+  // đổi khi deploy
+  const base = new URL("https://mmoblogs.com");
+  const canonical = new URL(`/blog/${encodeURIComponent(slug)}`, base);
+
+  const images = post.coverImage
+    ? [{ url: post.coverImage, alt: title }]
+    : undefined;
+
+  return {
+    title,
+    description,
+    metadataBase: base,
+    alternates: { canonical: canonical.toString() },
+    openGraph: {
+      title,
+      description,
+      type: "article",
+      url: canonical.toString(),
+      images,
+      locale: "vi_VN",
+      siteName: "MMO Blogs",
+    },
+    twitter: {
+      card: images ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: images?.map((i) => i.url),
+    },
+    robots: { index: true, follow: true },
+  };
 }
 
 export default async function BlogDetail({ params }: Props) {
-  // ✅ Read from markdown
-  let post: Awaited<ReturnType<typeof getPostBySlug>> | null = null;
+  const slug = params?.slug?.trim();
+  if (!slug) notFound();
 
-  try {
-    post = await getPostBySlug(params.slug);
-  } catch {
-    post = null;
-  }
+  const post = await getPostBySlug(slug);
+  if (!post) notFound();
 
-  if (!post) {
-    return (
-      <div className="min-h-screen bg-mmo text-slate-900">
-        <Header />
-        <main className="mx-auto max-w-3xl px-4 py-14">
-          <h1 className="text-2xl font-extrabold text-slate-900">
-            Không tìm thấy bài viết
-          </h1>
-          <Link
-            className="mt-4 inline-block font-bold text-neonBlue transition hover:text-neonOrange"
-            href="/blog"
-          >
-            ← Quay lại Blog
-          </Link>
-        </main>
-      </div>
-    );
-  }
+  const tags = post.tags; // ✅ theo lib: luôn là array
+  const dateFormatted = post.dateFormatted ?? (post.date ? formatDateVi(post.date) : undefined);
 
   return (
-    <div className="min-h-screen bg-mmo text-slate-900">
-      <Header />
-
-      <main className="mx-auto max-w-3xl px-4 py-14">
+    <section className="mx-auto max-w-3xl px-4 py-12">
+      {/* Top nav */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
-          className="font-bold text-neonBlue transition hover:text-neonOrange"
           href="/blog"
+          className="inline-flex items-center gap-2 font-extrabold text-neonBlue transition hover:text-neonOrange"
         >
           ← Quay lại Blog
         </Link>
 
-        <h1 className="mt-5 text-3xl font-extrabold text-slate-900">
-          {post.title}
-        </h1>
+        <div className="flex flex-wrap gap-2">
+          {/* Tags */}
+          {tags.map((t) => (
+            <Link key={t} href={`/blog/tag/${encodeURIComponent(t)}`}>
+              <Pill tone={toneForTag(t)}>{t}</Pill>
+            </Link>
+          ))}
 
-        <div className="mt-2 text-sm font-semibold text-slate-500">
-          {post.date}
-          {post.tag ? (
-            <span className="ml-2 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs font-extrabold text-slate-700">
-              {post.tag}
-            </span>
-          ) : null}
+          {/* Category (nếu bạn muốn dùng chung tag route thì giữ như này) */}
+          {post.category && (
+            <Link href={`/blog/tag/${encodeURIComponent(post.category)}`}>
+              <Pill tone="neutral">{post.category}</Pill>
+            </Link>
+          )}
         </div>
-
-        <article className="prose prose-slate mt-6 max-w-none rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <div dangerouslySetInnerHTML={{ __html: post.contentHtml }} />
-        </article>
-      </main>
-    </div>
-  );
-}
-import Header from "@/components/Header";
-import Link from "next/link";
-import { getAllPosts, getPostBySlug } from "@/lib/posts";
-
-type Props = { params: { slug: string } };
-
-// ✅ Optional: build static pages for all posts (good for SEO)
-export function generateStaticParams() {
-  return getAllPosts().map((p) => ({ slug: p.slug }));
-}
-
-export default async function BlogDetail({ params }: Props) {
-  // ✅ Read from markdown
-  let post: Awaited<ReturnType<typeof getPostBySlug>> | null = null;
-
-  try {
-    post = await getPostBySlug(params.slug);
-  } catch {
-    post = null;
-  }
-
-  if (!post) {
-    return (
-      <div className="min-h-screen bg-mmo text-slate-900">
-        <Header />
-        <main className="mx-auto max-w-3xl px-4 py-14">
-          <h1 className="text-2xl font-extrabold text-slate-900">
-            Không tìm thấy bài viết
-          </h1>
-          <Link
-            className="mt-4 inline-block font-bold text-neonBlue transition hover:text-neonOrange"
-            href="/blog"
-          >
-            ← Quay lại Blog
-          </Link>
-        </main>
       </div>
-    );
-  }
 
-  return (
-    <div className="min-h-screen bg-mmo text-slate-900">
-      <Header />
+      {/* Title */}
+      <h1 className="mt-6 text-3xl font-extrabold tracking-tight md:text-4xl">
+        {post.title}
+      </h1>
 
-      <main className="mx-auto max-w-3xl px-4 py-14">
-        <Link
-          className="font-bold text-neonBlue transition hover:text-neonOrange"
-          href="/blog"
-        >
-          ← Quay lại Blog
-        </Link>
+      {/* Meta */}
+      <div className="mt-2 text-sm font-semibold text-slate-500">
+        {dateFormatted ?? ""}
+        {post.readingTime ? ` • ${post.readingTime}` : ""}
+        {post.excerpt ? ` • ${post.excerpt}` : ""}
+      </div>
 
-        <h1 className="mt-5 text-3xl font-extrabold text-slate-900">
-          {post.title}
-        </h1>
-
-        <div className="mt-2 text-sm font-semibold text-slate-500">
-          {post.date}
-          {post.tag ? (
-            <span className="ml-2 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs font-extrabold text-slate-700">
-              {post.tag}
-            </span>
-          ) : null}
-        </div>
-
-        <article className="prose prose-slate mt-6 max-w-none rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <div dangerouslySetInnerHTML={{ __html: post.contentHtml }} />
-        </article>
-      </main>
-    </div>
+      {/* Content */}
+      <BlogContent
+        title={post.title}
+        contentHtml={post.contentHtml}
+        dateFormatted={dateFormatted}
+        readingTime={post.readingTime}
+        category={post.category}
+        tags={post.tags}
+        showHeader={false}
+      />
+    </section>
   );
 }

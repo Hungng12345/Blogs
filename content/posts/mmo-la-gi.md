@@ -2,20 +2,19 @@
 title: "MMO là gì? Bắt đầu đúng cách"
 date: "2025-01-01"
 tag: "NEWBIE"
-excerpt: "Tổng quan thực tế cho người mới tránh ảo tưởng."
+category: "Affiliate"
+excerpt: "Tổng quan thực tế cho người mới để tránh ảo tưởng và sai lầm phổ biến."
 ---
 
 ## MMO là gì?
 
-MMO (Make Money Online) là tập hợp các mô hình kiếm tiền qua Internet.
+MMO (Make Money Online) là các mô hình tạo thu nhập online.
 
-## Người mới nên bắt đầu thế nào?
+### Gợi ý bắt đầu
 
-- Chọn 1 mô hình
-- Chọn 1 kênh traffic
-- Tránh lời hứa lợi nhuận chắc chắn
-- Không all-in dự án không rõ nguồn
+- Chọn **1 mô hình**
+- Chọn **1 kênh traffic**
+- Chọn **1 offer**
+- Làm theo checklist rủi ro
 
-## Kết luận
-
-MMO không xấu, nguy hiểm là khi thiếu kiến thức.
+> Tránh all-in dự án không rõ nguồn.
